@@ -22,6 +22,23 @@ def process_frame_for_angle(frame):
             mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2)
         )
 
+        # 右肩、右ひじ、右手首の接続部分をカスタマイズ
+        right_shoulder = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+        right_elbow = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW]
+        right_wrist = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST]
+
+        # 右肩 → 右ひじ
+        cv2.line(frame, 
+                 (int(right_shoulder.x * frame.shape[1]), int(right_shoulder.y * frame.shape[0])), 
+                 (int(right_elbow.x * frame.shape[1]), int(right_elbow.y * frame.shape[0])), 
+                 (0, 255, 0), 4)  # 緑色の線
+
+        # 右ひじ → 右手首
+        cv2.line(frame, 
+                 (int(right_elbow.x * frame.shape[1]), int(right_elbow.y * frame.shape[0])), 
+                 (int(right_wrist.x * frame.shape[1]), int(right_wrist.y * frame.shape[0])), 
+                 (0, 255, 0), 4)  # 緑色の線
+
         # 関節取得
         shoulder = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
         elbow = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW]
