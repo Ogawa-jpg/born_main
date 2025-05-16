@@ -51,8 +51,5 @@ def process_frame_for_angle(frame):
         rad = np.arccos(np.clip(cos, -1.0, 1.0))
         angle = round(np.degrees(rad), 2)
 
-        # 結果を画像に描画
-        cv2.putText(frame, f"Right Elbow Angle: {angle} deg",
-                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
     return frame, angle
