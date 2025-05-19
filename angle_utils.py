@@ -67,6 +67,7 @@ def get_angle(pose_landmark,a, b, c):
     angle = np.arccos(np.clip(cos_angle, -1.0, 1.0))
     return np.degrees(angle)
 
+# 平均化することでブレを軽減する関数
 def smooth_angle(angle_buffer, current_angle):
     """角度をスムーズにするための関数"""
     if current_angle is not None:
@@ -74,3 +75,17 @@ def smooth_angle(angle_buffer, current_angle):
         return round(sum(angle_buffer) / len(angle_buffer))
     else:
         return "N/A"
+    
+# 座標比較関数
+def compare_coordinates(pose_landmark, a, b):
+    # 引数はランドマークのインデックス
+    landmark1 = get_landmark_coordinates(pose_landmark, a)
+    landmark2 = get_landmark_coordinates(pose_landmark, b)
+    x = 0
+
+    # 座標を比較(bがaより00は左下,01は左上,10は右下,11は右上)
+    if landmark1.x >  landmark2.x:
+        x += 10
+    if landmark1.y > landmark2.y:
+        x +=1
+    return x
