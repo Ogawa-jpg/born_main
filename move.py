@@ -1,11 +1,12 @@
 import cv2
+from collections import deque
 from angle_utils import process_frame_for_angle
 from angle_utils import get_angle
 from angle_utils import get_landmark_coordinates
 from angle_utils import change_color
-from collections import deque
+from angle_utils import smooth_angle
 
-angle_buffer = deque(maxlen=10)
+
 
 cap = cv2.VideoCapture(0)  # 0番は通常、内蔵または最初に見つかるカメラ
 
@@ -21,31 +22,33 @@ while True:
     #骨格検出を行う
     processed_frame, pose_landmark = process_frame_for_angle(frame)
     if pose_landmark is not None:
-        #角度を計算する
-        current_angle = get_angle(pose_landmark,12,14,16)  # 右肘の角度
+        #右ひじの角度を計算する
+        r_current_angle = get_angle(pose_landmark,12,14,16)  # 右肘の角度
         change_color(processed_frame, pose_landmark, 12, 14, (0, 255, 0))  # 線の色を緑に変更
         change_color(processed_frame, pose_landmark, 14, 16, (0, 255, 0)) 
+        #左ひじの角度を計算する
+        l_current_angle = get_angle(pose_landmark,11,13,15)  # 左肘の角度
+        change_color(processed_frame, pose_landmark, 11, 13, (255, 0, 0))  # 線の色を緑に変更
+        change_color(processed_frame, pose_landmark, 13, 15, (255, 0, 0)) 
 
         # 可視性を取得
-        if pose_landmark is not None:
-            visibility = round(pose_landmark.landmark[12].visibility, 2)  # 右肘の可視性
-        else:
-            visibility = "N/A"
+        visibility = round(pose_landmark.landmark[12].visibility, 2)  # 右肘の可視性
     else:
-        current_angle = None
+        r_current_angle = None
+        l_current_angle = None
         visibility = "N/A"
 
-    if current_angle is not None:
-        angle_buffer.append(current_angle)
-        angle = round(sum(angle_buffer) / len(angle_buffer))
-    else:
-        angle = "N/A"
+    r_angle_buffer = deque(maxlen=10)
+    r_angle = smooth_angle(r_angle_buffer, r_current_angle)
+    l_angle_buffer = deque(maxlen=10)
+    l_angle = smooth_angle(l_angle_buffer, l_current_angle)
+
 
     # 結果を画像に描画(x,y)
-    cv2.putText(frame, f"Right Elbow Angle: {angle} deg",
-                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-    cv2.putText(frame, f"Visibility: {visibility}",
-                    (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    cv2.putText(frame, f"Right Elbow Angle: {r_angle} deg",
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(frame, f"Left Elbow Angle: {l_angle} deg",
+                    (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
     
     
     # 画面表示

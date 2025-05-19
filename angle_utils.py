@@ -2,6 +2,7 @@ import mediapipe as mp
 import numpy as np
 import cv2
 
+
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5)
 mp_drawing = mp.solutions.drawing_utils
@@ -65,3 +66,11 @@ def get_angle(pose_landmark,a, b, c):
     cos_angle = np.dot(ab, bc) / (np.linalg.norm(ab) * np.linalg.norm(bc))
     angle = np.arccos(np.clip(cos_angle, -1.0, 1.0))
     return np.degrees(angle)
+
+def smooth_angle(angle_buffer, current_angle):
+    """角度をスムーズにするための関数"""
+    if current_angle is not None:
+        angle_buffer.append(current_angle)
+        return round(sum(angle_buffer) / len(angle_buffer))
+    else:
+        return "N/A"
