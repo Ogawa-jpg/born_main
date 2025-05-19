@@ -11,8 +11,16 @@ def process_frame_for_angle(frame):
     image_rgb = frame[:, :, ::-1]  # BGR → RGB
 
     results = pose.process(image_rgb)
-
+    
+    # 初期化
+    visibility = {
+            'right_shoulder': 0,
+            'right_elbow': 0,
+            'right_wrist': 0
+        }
     angle = None
+    
+    # 骨格を描画
     if results.pose_landmarks:
         mp_drawing.draw_landmarks(
             frame,
@@ -39,17 +47,16 @@ def process_frame_for_angle(frame):
                  (int(right_wrist.x * frame.shape[1]), int(right_wrist.y * frame.shape[0])), 
                  (0, 255, 0), 4)  # 緑色の線
 
-        # 関節取得
-        shoulder = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-        elbow = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ELBOW]
-        wrist = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_WRIST]
-
         # 角度計算
-        vec_a = np.array([shoulder.x, shoulder.y, shoulder.z]) - np.array([elbow.x, elbow.y, elbow.z])
-        vec_c = np.array([wrist.x, wrist.y, wrist.z]) - np.array([elbow.x, elbow.y, elbow.z])
+        vec_a = np.array([right_shoulder.x, right_shoulder.y]) - np.array([right_elbow.x, right_elbow.y])
+        vec_c = np.array([right_wrist.x, right_wrist.y]) - np.array([right_elbow.x, right_elbow.y])
         cos = np.inner(vec_a, vec_c) / (np.linalg.norm(vec_a) * np.linalg.norm(vec_c))
         rad = np.arccos(np.clip(cos, -1.0, 1.0))
         angle = round(np.degrees(rad), 2)
 
-
-    return frame, angle
+        visibility = {
+            'right_shoulder': round(right_shoulder.visibility,2),
+            'right_elbow': round(right_elbow.visibility,2),
+            'right_wrist': round(right_wrist.visibility,2)
+       }
+    return frame, angle, visibility
