@@ -1,7 +1,7 @@
 import mediapipe as mp
 import numpy as np
 import cv2
-
+import math
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5)
@@ -36,6 +36,18 @@ def get_landmark_coordinates(pose_landmark, landmark_index):
         return landmark
     else:
         return None
+    
+#ランドマーク間の長さを計算する関数
+def get_length(pose_landmark, a, b):
+    # 引数はランドマークのインデックス
+    landmark1 = get_landmark_coordinates(pose_landmark, a)
+    landmark2 = get_landmark_coordinates(pose_landmark, b)
+    
+    if landmark1 is not None and landmark2 is not None:
+        length = np.sqrt((landmark1.x - landmark2.x) ** 2 + (landmark1.y - landmark2.y) ** 2)
+        return length
+    else:
+        return None
 
 # ランドマークのインデックスを指定して、色を変更する関数
 def change_color(frame, pose_landmark, a, b, color):
@@ -57,7 +69,7 @@ def get_angle(pose_landmark,a, b, c):
 
     #3つのランドマークから角度を計算する
     a = np.array([landmark1.x, landmark1.y])
-    b = np.array([landmark2.x, landmark2.y])
+    b = np.array([landmark2.x, landmark2.y]) #基準点
     c = np.array([landmark3.x, landmark3.y])
 
     ab = a - b
@@ -68,11 +80,10 @@ def get_angle(pose_landmark,a, b, c):
     return np.degrees(angle)
 
 # 平均化することでブレを軽減する関数
-def smooth_angle(angle_buffer, current_angle):
-    """角度をスムーズにするための関数"""
-    if current_angle is not None:
-        angle_buffer.append(current_angle)
-        return round(sum(angle_buffer) / len(angle_buffer))
+def smooth(buffer, Value):
+    if Value is not None:
+        buffer.append(Value)
+        return round(sum(buffer) / len(buffer))
     else:
         return "N/A"
     
@@ -89,3 +100,30 @@ def compare_coordinates(pose_landmark, a, b):
     if landmark1.y > landmark2.y:
         x +=1
     return x
+
+#カメラに向かって腕を突き出す → 肩から肘、肘から手首の長さが大きく変化する(if rate_arm_r < 1.4 and rate_arm_r > 0.6:)
+#Z座標はカメラに近いほどマイナスになる
+#腕が前につき出ているかどうかを確認する関数
+def is_arm_stretched(pose_landmark):
+    # 引数はランドマークのインデックス
+    shoulder = get_landmark_coordinates(pose_landmark, 12)  # 右肩
+    wrist = get_landmark_coordinates(pose_landmark, 16) # 右手首
+    camera_direction = np.array([0, 0, -1])  # カメラの方向ベクトル
+    
+    # 腕の方向ベクトル（肩から手首のベクトル）
+    shoulder_to_wrist = (wrist.x - shoulder.x, wrist.y - shoulder.y, wrist.z - shoulder.z)
+    # ベクトルの内積を計算して角度を求める
+    dot_product = shoulder_to_wrist[0] * camera_direction[0] + shoulder_to_wrist[1] * camera_direction[1] + shoulder_to_wrist[2] * camera_direction[2]
+    magnitude_1 = math.sqrt(shoulder_to_wrist[0]**2 + shoulder_to_wrist[1]**2 + shoulder_to_wrist[2]**2)
+    magnitude_2 = math.sqrt(camera_direction[0]**2 + camera_direction[1]**2 + camera_direction[2]**2)
+
+    if magnitude_1 == 0 or magnitude_2 == 0:
+        return None
+    # 角度（ラジアン）の計算
+    cosine_angle = dot_product / (magnitude_1 * magnitude_2)
+    angle_rad = math.acos(np.clip(cosine_angle),-1.0, 1.0)
+
+    # ラジアンを度に変換
+    angle_deg = math.degrees(angle_rad)    
+    
+    return angle_deg
