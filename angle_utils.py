@@ -121,7 +121,7 @@ def is_arm_stretched(pose_landmark):
         return None
     # 角度（ラジアン）の計算
     cosine_angle = dot_product / (magnitude_1 * magnitude_2)
-    angle_rad = math.acos(np.clip(cosine_angle),-1.0, 1.0)
+    angle_rad = math.acos(np.clip(cosine_angle,-1.0, 1.0))
 
     # ラジアンを度に変換
     angle_deg = math.degrees(angle_rad)    
