@@ -104,7 +104,7 @@ def compare_coordinates(pose_landmark, a, b):
 #カメラに向かって腕を突き出す → 肩から肘、肘から手首の長さが大きく変化する(if rate_arm_r < 1.4 and rate_arm_r > 0.6:,rate_arm_r = get_length(pose_landmark, 12, 14) / get_length(pose_landmark, 14, 16))
 #Z座標はカメラに近いほどマイナスになる
 #腕が前につき出ているかどうかを確認する関数
-def is_arm_stretched(pose_landmark, vector):
+def is_arm_direction(pose_landmark, vector):
     # 引数はランドマークのインデックス
     shoulder = get_landmark_coordinates(pose_landmark, 12)  # 右肩
     elbow = get_landmark_coordinates(pose_landmark, 14)  # 右肘
