@@ -10,6 +10,8 @@ from angle_utils import is_arm_stretched
 r_angle_buffer = deque(maxlen=10)
 l_angle_buffer = deque(maxlen=10)
 buffer1 = deque(maxlen=10)
+max = 0
+min = 50
 
 cap = cv2.VideoCapture(0)  # 0番は通常、内蔵または最初に見つかるカメラ
 
@@ -46,10 +48,14 @@ while True:
         """
 
         #腕が前に突き出ているかどうかを確認する
-        angle_arm_r = is_arm_stretched(pose_landmark)
+        angle_arm_r = is_arm_stretched(pose_landmark, "x")
         smooth_arm_r0 = smooth(buffer1, angle_arm_r)
         cv2.putText(frame, f"Arm angle: {smooth_arm_r0}",
                      (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+        if smooth_arm_r0 > max:
+            max = smooth_arm_r0
+        if smooth_arm_r0 < min:
+            min = smooth_arm_r0
 
         # 可視性を取得
         r_visibility = round(pose_landmark.landmark[12].visibility, 2) # 右肩の可視性
@@ -80,5 +86,7 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+print("Max:", max)
+print("Min:", min)
 cap.release()
 cv2.destroyAllWindows()

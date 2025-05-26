@@ -101,21 +101,30 @@ def compare_coordinates(pose_landmark, a, b):
         x +=1
     return x
 
-#カメラに向かって腕を突き出す → 肩から肘、肘から手首の長さが大きく変化する(if rate_arm_r < 1.4 and rate_arm_r > 0.6:)
+#カメラに向かって腕を突き出す → 肩から肘、肘から手首の長さが大きく変化する(if rate_arm_r < 1.4 and rate_arm_r > 0.6:,rate_arm_r = get_length(pose_landmark, 12, 14) / get_length(pose_landmark, 14, 16))
 #Z座標はカメラに近いほどマイナスになる
 #腕が前につき出ているかどうかを確認する関数
-def is_arm_stretched(pose_landmark):
+def is_arm_stretched(pose_landmark, vector):
     # 引数はランドマークのインデックス
     shoulder = get_landmark_coordinates(pose_landmark, 12)  # 右肩
+    elbow = get_landmark_coordinates(pose_landmark, 14)  # 右肘
     wrist = get_landmark_coordinates(pose_landmark, 16) # 右手首
-    camera_direction = np.array([0, 0, -1])  # カメラの方向ベクトル
+
+    if vector == "x":
+        base_vector = np.array([-1, 0, 0])  # x軸方向
+    elif vector == "y":
+        base_vector = np.array([0, 1, 0]) # y軸方向
+    elif vector == "z":
+        base_vector = np.array([0, 0, -1])  # z軸方向
+    else:
+        raise ValueError("Invalid vector. Choose 'x', 'y', or 'z'.")
     
-    # 腕の方向ベクトル（肩から手首のベクトル）
-    shoulder_to_wrist = (wrist.x - shoulder.x, wrist.y - shoulder.y, wrist.z - shoulder.z)
+    # 腕の方向ベクトル（肩から肘のベクトル）
+    shoulder_to_elbow = (elbow.x - shoulder.x, elbow.y - shoulder.y, elbow.z - shoulder.z)
     # ベクトルの内積を計算して角度を求める
-    dot_product = shoulder_to_wrist[0] * camera_direction[0] + shoulder_to_wrist[1] * camera_direction[1] + shoulder_to_wrist[2] * camera_direction[2]
-    magnitude_1 = math.sqrt(shoulder_to_wrist[0]**2 + shoulder_to_wrist[1]**2 + shoulder_to_wrist[2]**2)
-    magnitude_2 = math.sqrt(camera_direction[0]**2 + camera_direction[1]**2 + camera_direction[2]**2)
+    dot_product = shoulder_to_elbow[0] * base_vector[0] + shoulder_to_elbow[1] * base_vector[1] + shoulder_to_elbow[2] * base_vector[2]
+    magnitude_1 = math.sqrt(shoulder_to_elbow[0]**2 + shoulder_to_elbow[1]**2 + shoulder_to_elbow[2]**2)
+    magnitude_2 = math.sqrt(base_vector[0]**2 + base_vector[1]**2 + base_vector[2]**2)
 
     if magnitude_1 == 0 or magnitude_2 == 0:
         return None
