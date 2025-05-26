@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import math
 
+
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5)
 mp_drawing = mp.solutions.drawing_utils
@@ -136,3 +137,7 @@ def is_arm_direction(pose_landmark, vector):
     angle_deg = math.degrees(angle_rad)    
     
     return angle_deg
+
+
+def is_significant_change(prev_angles, new_angles, threshold):
+    return any(abs(prev_angles[i] - new_angles[i]) > threshold for i in range(6))

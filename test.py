@@ -48,7 +48,7 @@ while True:
         
 
         #腕が前に突き出ているかどうかを確認する
-        angle_arm_r = is_arm_direction(pose_landmark, "x")
+        angle_arm_r = is_arm_direction(pose_landmark, "y")
         smooth_arm_r0 = smooth(buffer1, angle_arm_r)
         cv2.putText(frame, f"Arm direction: {smooth_arm_r0}",
                      (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
