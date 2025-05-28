@@ -104,7 +104,7 @@ def compare_coordinates(pose_landmark, a, b):
 
 #カメラに向かって腕を突き出す → 肩から肘、肘から手首の長さが大きく変化する(if rate_arm_r < 1.4 and rate_arm_r > 0.6:,rate_arm_r = get_length(pose_landmark, 12, 14) / get_length(pose_landmark, 14, 16))
 #Z座標はカメラに近いほどマイナスになる
-#腕が前につき出ているかどうかを確認する関数
+#腕の方向を判定する関数
 def is_arm_direction(pose_landmark, vector):
     # 引数はランドマークのインデックス
     shoulder = get_landmark_coordinates(pose_landmark, 12)  # 右肩
@@ -141,3 +141,98 @@ def is_arm_direction(pose_landmark, vector):
 
 def is_significant_change(prev_angles, new_angles, threshold):
     return any(abs(prev_angles[i] - new_angles[i]) > threshold for i in range(6))
+
+def calculate_arm_height(a, b):
+    """アームの高さを計算する関数"""
+    alpha = math.radians(a)
+    beta = math.radians(90 - a)
+    ganma = math.radians(180 - b)
+    delta = math.radians(a + b - 90)
+    
+    # アームの高さを計算
+    h = 14 + 11 * math.cos(alpha) - 20 * math.sin(beta + ganma) - 3 * math.cos(delta)
+    
+    return h
+
+def Collision_prevention(margin, a_deg, b_deg, k=0):
+    # 角度aは度で入力する想定。ラジアンに変換
+    a = math.radians(a_deg)
+    
+    # 定数計算
+    R = math.sqrt(20**2 + (-3)**2)
+    delta = math.atan2(-3, 20)  # atan2(y, x)で符号含め計算
+    
+    # 分子
+    numerator = margin - 14 - 11 * math.cos(a)
+    # arccosの引数（範囲に注意）
+    val = numerator / R
+    
+    # 範囲の制限
+    val = max(-1.0, min(1.0, val))
+    
+    # arccos計算
+    acos_val = math.acos(val)
+    
+    # bの2解を計算（ラジアン）
+    b1 = delta + acos_val - a + 2 * math.pi * k
+    #b2 = delta - acos_val - a + 2 * math.pi * k
+    
+    # ラジアンから度に戻す
+    b1_deg = math.degrees(b1)
+    #b2_deg = math.degrees(b2)
+    
+    if b_deg >= b1_deg:
+        return b1_deg
+    else:
+        return b_deg
+    
+
+
+def filter_angle(new_angle, angle_history, MAX_ANGLE_DIFF):
+    """
+    新しい角度が急激に変わっていたら
+    直前の角度を返す関数
+    """
+    if len(angle_history) == 0:
+        angle_history.append(new_angle)
+        return new_angle
+    
+    prev_angle = angle_history[-1]
+
+    # 角度差を計算
+    diff = abs(new_angle - prev_angle)
+
+    if diff > MAX_ANGLE_DIFF:
+        # 急激な変化なので直前の角度を使う
+        return prev_angle
+    else:
+        # 変化が穏やかなので新しい角度を採用
+        angle_history.append(new_angle)
+        return new_angle
+    
+
+def filter_movement(pose_landmark, index , history, threshold=0.005):
+    """
+    前のフレームと比較して、動きが閾値以下なら
+    Noneを返す関数
+    """
+    new_wrist = get_landmark_coordinates(pose_landmark, index)
+    if new_wrist.visibility < 0.9:
+        return None  
+
+    if len(history) == 0:
+        history.append(new_wrist)
+        return new_wrist
+    
+    prev_wrist = history[-1]
+
+    # 動きの大きさを計算
+    diff = np.sqrt((new_wrist.x - prev_wrist.x)**2 + (new_wrist.y - prev_wrist.y)**2)
+
+    if diff > threshold:
+        # 変化ありなので変更を許可
+        history.append(new_wrist)
+        return True
+    else:
+        # 変化がないので維持
+        return False
