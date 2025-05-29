@@ -9,7 +9,7 @@ pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5)
 mp_drawing = mp.solutions.drawing_utils
 
 def process_frame_for_angle(frame):
-    """1フレームから右ひじの角度を計算し、骨格を描画した画像を返す"""
+    """1フレームから骨格を描画した画像を返す"""
     image_rgb = frame[:, :, ::-1]  # BGR → RGB
 
     results = pose.process(image_rgb)
@@ -109,7 +109,7 @@ def is_arm_direction(pose_landmark, vector):
     # 引数はランドマークのインデックス
     shoulder = get_landmark_coordinates(pose_landmark, 12)  # 右肩
     elbow = get_landmark_coordinates(pose_landmark, 14)  # 右肘
-    wrist = get_landmark_coordinates(pose_landmark, 16) # 右手首
+    #wrist = get_landmark_coordinates(pose_landmark, 16) # 右手首
 
     if vector == "x":
         base_vector = np.array([-1, 0, 0])  # x軸方向
@@ -211,7 +211,7 @@ def filter_angle(new_angle, angle_history, MAX_ANGLE_DIFF):
         return new_angle
     
 
-def filter_movement(pose_landmark, index , history, threshold=0.005):
+def filter_movement(pose_landmark, index , history, threshold=1):
     """
     前のフレームと比較して、動きが閾値以下なら
     Noneを返す関数

@@ -54,7 +54,7 @@ while True:
         
 
         #腕とy軸との比較
-        angle_arm_r = is_arm_direction(pose_landmark, "y")
+        angle_arm_r = is_arm_direction(pose_landmark, "x")
         smooth_arm_r0 = smooth(buffer1, angle_arm_r)
         cv2.putText(frame, f"Arm direction: {smooth_arm_r0}",
                      (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
@@ -62,6 +62,8 @@ while True:
             max = smooth_arm_r0
         if smooth_arm_r0 < min:
             min = smooth_arm_r0
+        
+        r_movement = filter_movement(pose_landmark, 16 , wrist_history, 0.001)
 
         # 可視性を取得
         r_visibility = round(pose_landmark.landmark[14].visibility, 2) # 右肩の可視性
@@ -76,7 +78,7 @@ while True:
     r_angle = smooth(r_angle_buffer, r_current_angle)
     l_angle = smooth(l_angle_buffer, l_current_angle)
 
-    r_movement = filter_movement(pose_landmark, 16 , wrist_history)
+    
 
     # 結果を画像に描画(x,y)
     cv2.putText(frame, f"Right Elbow Angle: {r_angle} deg, {r_visibility}",
@@ -92,7 +94,7 @@ while True:
         cv2.putText(frame, "Right wrist is None", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
     
     
-    # 画面表示
+    #画面表示
     cv2.imshow("Elbow Angle Detection", processed_frame)
 
     # qキーで終了

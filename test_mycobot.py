@@ -4,7 +4,7 @@ import time
 
 mc = MyCobot280('COM4', 115200)
 mc.set_color(0, 255, 0)  # 緑色に設定
-mc.send_angles([0, 0, 0, 0, 0, 0], 50)  
+mc.send_angles([90, 60, -60, 0, 0, 0], 50)  
 time.sleep(2)  # アームが動くのを待つ
 
 a = mc.get_angles()[1]  # アームの角度を取得

@@ -1,9 +1,14 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+from collections import deque
+from angle_utils import process_frame_for_angle
 
 mp_selfie_segmentation = mp.solutions.selfie_segmentation
 segmentation = mp_selfie_segmentation.SelfieSegmentation(model_selection=1)
+previous_frame = None
+check = 0
+move_check = deque(maxlen=10)
 
 cap = cv2.VideoCapture(0)
 
@@ -33,7 +38,23 @@ while True:
 
     output_image = np.where(condition[:, :, None], frame, bg_image)
 
-    cv2.imshow("Background Replacement", output_image)
+    processed_frame = output_image
+    if processed_frame is not None:
+        if previous_frame is not None:
+            diff = cv2.absdiff(processed_frame, previous_frame)
+            diff_sum = np.sum(diff)
+            if diff_sum > 2000000:  # 適切な閾値を設定
+                check = 1
+            else:
+                check = 0
+        move_check.append(check)
+        if len(move_check) == move_check.maxlen:
+            if sum(move_check) > 5:
+                print("MOVE")
+        previous_frame = processed_frame.copy()
+
+    cv2.imshow("Background Replacement", processed_frame)
+    
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
