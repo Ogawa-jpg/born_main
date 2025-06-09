@@ -2,6 +2,7 @@ import mediapipe as mp
 import numpy as np
 import cv2
 import math
+from collections import deque
 
 
 mp_pose = mp.solutions.pose
@@ -163,7 +164,7 @@ def Collision_prevention(margin, a_deg, b_deg, k=0):
     delta = math.atan2(-3, 20)  # atan2(y, x)で符号含め計算
     
     # 分子
-    numerator = margin - 14 - 11 * math.cos(a)
+    numerator = margin - 13 - 11 * math.cos(a)
     # arccosの引数（範囲に注意）
     val = numerator / R
     
@@ -186,6 +187,14 @@ def Collision_prevention(margin, a_deg, b_deg, k=0):
     else:
         return b_deg
     
+def Collision_prevention_with_table(a_deg, b_deg):
+    sum_angle = a_deg + b_deg
+    # 角度の合計が180度を超える場合、衝突防止のために調整  
+    if sum_angle > 170:
+        b_deg = 170 - a_deg
+    else:
+        b_deg = b_deg
+    return b_deg
 
 
 def filter_angle(new_angle, angle_history, MAX_ANGLE_DIFF):
@@ -210,29 +219,37 @@ def filter_angle(new_angle, angle_history, MAX_ANGLE_DIFF):
         angle_history.append(new_angle)
         return new_angle
     
-
+move_buffer = deque(maxlen=10)  # 動きの履歴を保持するバッファ
 def filter_movement(pose_landmark, index , history, threshold=1):
     """
     前のフレームと比較して、動きが閾値以下なら
     Noneを返す関数
     """
-    new_wrist = get_landmark_coordinates(pose_landmark, index)
-    if new_wrist.visibility < 0.9:
+    new_move = get_landmark_coordinates(pose_landmark, index)
+    if new_move.visibility < 0.9:
         return None  
 
     if len(history) == 0:
-        history.append(new_wrist)
-        return new_wrist
+        history.append(new_move)
+        return new_move
     
-    prev_wrist = history[-1]
+    prev_move = history[-1]
 
     # 動きの大きさを計算
-    diff = np.sqrt((new_wrist.x - prev_wrist.x)**2 + (new_wrist.y - prev_wrist.y)**2)
-
+    diff = np.sqrt((new_move.x - prev_move.x)**2 + (new_move.y - prev_move.y)**2)
+    
     if diff > threshold:
         # 変化ありなので変更を許可
-        history.append(new_wrist)
+        history.append(new_move)
+        current_move = 1
+    else:
+        # 変化なし
+        current_move = 0
+    
+    smooth_move = smooth(move_buffer, current_move)
+    
+    if smooth_move >= 0.5:
         return True
     else:
-        # 変化がないので維持
         return False
+   

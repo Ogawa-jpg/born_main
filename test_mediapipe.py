@@ -14,6 +14,7 @@ l_angle_buffer = deque(maxlen=10)
 buffer1 = deque(maxlen=10)
 angle_history = deque(maxlen=2)
 wrist_history = deque(maxlen=2)
+wrist_buffer = deque(maxlen=10)
 
 max = 0
 min = 50
@@ -63,7 +64,8 @@ while True:
         if smooth_arm_r0 < min:
             min = smooth_arm_r0
         
-        r_movement = filter_movement(pose_landmark, 16 , wrist_history, 0.001)
+        r_movement = filter_movement(pose_landmark, 16 , wrist_history, 0.01) #値が小さいほど動きに敏感
+        
 
         # 可視性を取得
         r_visibility = round(pose_landmark.landmark[14].visibility, 2) # 右肩の可視性
@@ -86,9 +88,9 @@ while True:
     cv2.putText(frame, f"Left Elbow Angle: {l_angle} deg, {l_visibility}",
                     (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
     
-    if r_movement is True:
+    if r_movement == True:
         cv2.putText(frame, "Right wrist is moving", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    elif r_movement is False:
+    elif r_movement == False:
         cv2.putText(frame, "Right wrist is stoping", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     else:
         cv2.putText(frame, "Right wrist is None", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
